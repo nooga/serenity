@@ -28,6 +28,81 @@
 #include <LibJS/SourceRange.h>
 #include <LibRegex/Regex.h>
 
+#define ENUMERATE_NODE_CLASSES               \
+    NODE_CLASS(LabelledStatement)            \
+    NODE_CLASS(ScopeNode)                    \
+    NODE_CLASS(BinaryExpression)             \
+    NODE_CLASS(LogicalExpression)            \
+    NODE_CLASS(UnaryExpression)              \
+    NODE_CLASS(CallExpression)               \
+    NODE_CLASS(SuperCall)                    \
+    NODE_CLASS(ClassDeclaration)             \
+    NODE_CLASS(ClassExpression)              \
+    NODE_CLASS(ClassMethod)                  \
+    NODE_CLASS(ClassField)                   \
+    NODE_CLASS(StaticInitializer)            \
+    NODE_CLASS(StringLiteral)                \
+    NODE_CLASS(SuperExpression)              \
+    NODE_CLASS(NumericLiteral)               \
+    NODE_CLASS(BigIntLiteral)                \
+    NODE_CLASS(BooleanLiteral)               \
+    NODE_CLASS(NullLiteral)                  \
+    NODE_CLASS(BindingPattern)               \
+    NODE_CLASS(FunctionNode)                 \
+    NODE_CLASS(FunctionDeclaration)          \
+    NODE_CLASS(FunctionExpression)           \
+    NODE_CLASS(YieldExpression)              \
+    NODE_CLASS(AwaitExpression)              \
+    NODE_CLASS(ReturnStatement)              \
+    NODE_CLASS(IfStatement)                  \
+    NODE_CLASS(WhileStatement)               \
+    NODE_CLASS(WithStatement)                \
+    NODE_CLASS(DoWhileStatement)             \
+    NODE_CLASS(ForStatement)                 \
+    NODE_CLASS(ForInStatement)               \
+    NODE_CLASS(ForOfStatement)               \
+    NODE_CLASS(ForAwaitOfStatement)          \
+    NODE_CLASS(Identifier)                   \
+    NODE_CLASS(PrivateIdentifier)            \
+    NODE_CLASS(SpreadExpression)             \
+    NODE_CLASS(ThisExpression)               \
+    NODE_CLASS(AssignmentExpression)         \
+    NODE_CLASS(UpdateExpression)             \
+    NODE_CLASS(VariableDeclaration)          \
+    NODE_CLASS(VariableDeclarator)           \
+    NODE_CLASS(ObjectProperty)               \
+    NODE_CLASS(ObjectExpression)             \
+    NODE_CLASS(ExpressionStatement)          \
+    NODE_CLASS(MemberExpression)             \
+    NODE_CLASS(OptionalChain)                \
+    NODE_CLASS(MetaProperty)                 \
+    NODE_CLASS(ImportCall)                   \
+    NODE_CLASS(RegExpLiteral)                \
+    NODE_CLASS(ArrayExpression)              \
+    NODE_CLASS(TemplateLiteral)              \
+    NODE_CLASS(TaggedTemplateLiteral)        \
+    NODE_CLASS(TryStatement)                 \
+    NODE_CLASS(CatchClause)                  \
+    NODE_CLASS(ThrowStatement)               \
+    NODE_CLASS(SwitchStatement)              \
+    NODE_CLASS(SwitchCase)                   \
+    NODE_CLASS(ConditionalExpression)        \
+    NODE_CLASS(SequenceExpression)           \
+    NODE_CLASS(ExportStatement)              \
+    NODE_CLASS(ImportStatement)              \
+    NODE_CLASS(DebuggerStatement)            \
+    NODE_CLASS(BreakStatement)               \
+    NODE_CLASS(ErrorStatement)               \
+    NODE_CLASS(ErrorDeclaration)             \
+    NODE_CLASS(ErrorExpression)              \
+    NODE_CLASS(ContinueStatement)            \
+    NODE_CLASS(SyntheticReferenceExpression) \
+    NODE_CLASS(EmptyStatement)               \
+    NODE_CLASS(ClassFieldInitializerStatement)
+
+#define ACCEPT_VISITOR \
+    void accept_visitor(ASTNode::Visitor& visitor) const { visitor.visit(*this); }
+
 namespace JS {
 
 class Declaration;
@@ -36,6 +111,10 @@ class FunctionDeclaration;
 class Identifier;
 class MemberExpression;
 class VariableDeclaration;
+
+#define NODE_CLASS(node_class) class node_class;
+ENUMERATE_NODE_CLASSES
+#undef NODE_CLASS
 
 template<class T, class... Args>
 static inline NonnullRefPtr<T>
@@ -53,6 +132,15 @@ public:
 
     SourceRange const& source_range() const { return m_source_range; }
     SourceRange& source_range() { return m_source_range; }
+
+    class Visitor {
+    public:
+#define NODE_CLASS(node_class) virtual void visit(const node_class&) = 0;
+        ENUMERATE_NODE_CLASSES
+#undef NODE_CLASS
+    };
+
+    virtual void accept_visitor(Visitor&) const = 0;
 
     String class_name() const;
 
@@ -117,6 +205,8 @@ public:
     NonnullRefPtr<Statement> const& labelled_item() const { return m_labelled_item; }
     NonnullRefPtr<Statement>& labelled_item() { return m_labelled_item; }
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_labelled_statement() const final { return true; }
 
@@ -153,6 +243,8 @@ public:
     }
     Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 };
 
 class ErrorStatement final : public Statement {
@@ -162,6 +254,8 @@ public:
     {
     }
     Completion execute(Interpreter&, GlobalObject&) const override { return {}; }
+
+    ACCEPT_VISITOR
 };
 
 class ExpressionStatement final : public Statement {
@@ -177,6 +271,8 @@ public:
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
     Expression const& expression() const { return m_expression; };
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_expression_statement() const override { return true; }
@@ -253,6 +349,8 @@ public:
     void block_declaration_instantiation(GlobalObject& global_object, Environment* environment) const;
 
     ThrowCompletionOr<void> for_each_function_hoistable_with_annexB_extension(ThrowCompletionOrVoidCallback<FunctionDeclaration&>&& callback) const;
+
+    ACCEPT_VISITOR
 
 protected:
     explicit ScopeNode(SourceRange source_range)
@@ -339,6 +437,8 @@ public:
     Vector<ImportEntry> const& entries() const { return m_entries; }
     ModuleRequest const& module_request() const { return m_module_request; }
     ModuleRequest& module_request() { return m_module_request; }
+
+    ACCEPT_VISITOR
 
 private:
     ModuleRequest m_module_request;
@@ -442,6 +542,8 @@ public:
         return m_module_request;
     }
 
+    ACCEPT_VISITOR
+
 private:
     RefPtr<ASTNode> m_statement;
     Vector<ExportEntry> m_entries;
@@ -492,6 +594,8 @@ public:
 
     ThrowCompletionOr<void> global_declaration_instantiation(Interpreter& interpreter, GlobalObject& global_object, GlobalEnvironment& global_environment) const;
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_program() const override { return true; }
 
@@ -510,6 +614,8 @@ public:
     {
     }
     Completion execute(Interpreter& interpreter, GlobalObject& object) const override;
+
+    ACCEPT_VISITOR
 };
 
 class FunctionBody final : public ScopeNode {
@@ -524,6 +630,8 @@ public:
     bool in_strict_mode() const { return m_in_strict_mode; }
 
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     bool m_in_strict_mode { false };
@@ -565,6 +673,8 @@ public:
     {
         VERIFY_NOT_REACHED();
     }
+
+    ACCEPT_VISITOR
 };
 
 struct BindingPattern : RefCounted<BindingPattern> {
@@ -674,6 +784,8 @@ public:
 
     void set_should_do_additional_annexB_steps() { m_is_hoisted = true; }
 
+    ACCEPT_VISITOR
+
 private:
     bool m_is_hoisted { false };
 };
@@ -699,6 +811,8 @@ public:
 
     Value instantiate_ordinary_function_expression(Interpreter& interpreter, GlobalObject& global_object, FlyString given_name) const;
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_function_expression() const override { return true; }
 };
@@ -711,6 +825,8 @@ public:
     }
 
     Completion execute(Interpreter&, GlobalObject&) const override { return {}; }
+
+    ACCEPT_VISITOR
 };
 
 class YieldExpression final : public Expression {
@@ -729,6 +845,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     RefPtr<Expression> m_argument;
     bool m_is_yield_from { false };
@@ -745,6 +863,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> m_argument;
@@ -763,6 +883,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     RefPtr<Expression> m_argument;
@@ -785,6 +907,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> m_predicate;
@@ -809,6 +933,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_test;
     NonnullRefPtr<Statement> m_body;
@@ -831,6 +957,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_test;
     NonnullRefPtr<Statement> m_body;
@@ -850,6 +978,8 @@ public:
 
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> m_object;
@@ -877,6 +1007,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     RefPtr<ASTNode> m_init;
     RefPtr<Expression> m_test;
@@ -902,6 +1034,8 @@ public:
     virtual Completion loop_evaluation(Interpreter&, GlobalObject&, Vector<FlyString> const&) const override;
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     Variant<NonnullRefPtr<ASTNode>, NonnullRefPtr<BindingPattern>> m_lhs;
     NonnullRefPtr<Expression> m_rhs;
@@ -926,6 +1060,8 @@ public:
     virtual Completion loop_evaluation(Interpreter&, GlobalObject&, Vector<FlyString> const&) const override;
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     Variant<NonnullRefPtr<ASTNode>, NonnullRefPtr<BindingPattern>> m_lhs;
     NonnullRefPtr<Expression> m_rhs;
@@ -945,6 +1081,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Completion loop_evaluation(Interpreter&, GlobalObject&, Vector<FlyString> const&) const override;
     virtual void dump(int indent) const override;
+
+    ACCEPT_VISITOR
 
 private:
     Variant<NonnullRefPtr<ASTNode>, NonnullRefPtr<BindingPattern>> m_lhs;
@@ -991,6 +1129,12 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    BinaryOp op() const { return m_op; }
+    NonnullRefPtr<Expression> lhs() const { return m_lhs; }
+    NonnullRefPtr<Expression> rhs() const { return m_rhs; }
+
+    ACCEPT_VISITOR
+
 private:
     BinaryOp m_op;
     NonnullRefPtr<Expression> m_lhs;
@@ -1016,6 +1160,12 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    LogicalOp op() const { return m_op; }
+    NonnullRefPtr<Expression> lhs() const { return m_lhs; }
+    NonnullRefPtr<Expression> rhs() const { return m_rhs; }
+
+    ACCEPT_VISITOR
 
 private:
     LogicalOp m_op;
@@ -1046,6 +1196,11 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    UnaryOp op() const { return m_op; }
+    NonnullRefPtr<Expression> lhs() const { return m_lhs; }
+
+    ACCEPT_VISITOR
+
 private:
     UnaryOp m_op;
     NonnullRefPtr<Expression> m_lhs;
@@ -1063,6 +1218,10 @@ public:
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    NonnullRefPtrVector<Expression> expressions() const { return m_expressions; };
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtrVector<Expression> m_expressions;
@@ -1088,6 +1247,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     bool m_value { false };
 };
@@ -1104,6 +1265,10 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    Value value() const { return m_value; }
+
+    ACCEPT_VISITOR
+
 private:
     Value m_value;
 };
@@ -1119,6 +1284,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     String m_value;
@@ -1140,6 +1307,8 @@ public:
     StringView value() const { return m_value; }
     bool is_use_strict_directive() const { return m_is_use_strict_directive; };
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_string_literal() const override { return true; }
 
@@ -1157,6 +1326,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 };
 
 class RegExpLiteral final : public Literal {
@@ -1180,6 +1351,8 @@ public:
     regex::RegexOptions<ECMAScriptFlags> const& parsed_flags() const { return m_parsed_flags; }
     String const& pattern() const { return m_pattern; }
     String const& flags() const { return m_flags; }
+
+    ACCEPT_VISITOR
 
 private:
     regex::Parser::Result m_parsed_regex;
@@ -1205,6 +1378,8 @@ public:
     virtual ThrowCompletionOr<Reference> to_reference(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_identifier() const override { return true; }
 
@@ -1225,6 +1400,8 @@ public:
 
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
+
+    ACCEPT_VISITOR
 
 private:
     FlyString m_string;
@@ -1290,6 +1467,8 @@ public:
     virtual ThrowCompletionOr<ClassValue> class_element_evaluation(Interpreter&, GlobalObject&, Object& home_object) const override;
     virtual Optional<FlyString> private_bound_identifier() const override;
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_class_method() const override { return true; }
     NonnullRefPtr<Expression> m_key;
@@ -1317,6 +1496,8 @@ public:
     virtual ThrowCompletionOr<ClassValue> class_element_evaluation(Interpreter& interpreter, GlobalObject& object, Object& home_object) const override;
     virtual Optional<FlyString> private_bound_identifier() const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_key;
     RefPtr<Expression> m_initializer;
@@ -1337,6 +1518,8 @@ public:
 
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<FunctionBody> m_function_body;
     bool m_contains_direct_call_to_eval { false };
@@ -1353,6 +1536,8 @@ public:
     virtual void dump(int indent) const override;
 
     virtual bool is_super_expression() const override { return true; }
+
+    ACCEPT_VISITOR
 };
 
 class ClassExpression final : public Expression {
@@ -1378,6 +1563,8 @@ public:
     bool has_name() const { return !m_name.is_empty(); }
 
     ThrowCompletionOr<ECMAScriptFunctionObject*> class_definition_evaluation(Interpreter& interpreter, GlobalObject& global_object, FlyString const& binding_name = {}, FlyString const& class_name = {}) const;
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_class_expression() const override { return true; }
@@ -1407,6 +1594,8 @@ public:
 
     StringView name() const { return m_class_expression->name(); }
 
+    ACCEPT_VISITOR
+
 private:
     virtual bool is_class_declaration() const override { return true; }
 
@@ -1426,6 +1615,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_target;
 };
@@ -1439,6 +1630,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 };
 
 class CallExpression : public Expression {
@@ -1460,6 +1653,9 @@ public:
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
     Expression const& callee() const { return m_callee; }
+    Vector<Argument> arguments() const { return m_arguments; }
+
+    ACCEPT_VISITOR
 
 protected:
     virtual bool is_call_expression() const override { return true; }
@@ -1487,6 +1683,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
 
     virtual bool is_new_expression() const override { return true; }
+
+    ACCEPT_VISITOR
 };
 
 class SuperCall final : public Expression {
@@ -1499,6 +1697,8 @@ public:
 
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
+
+    ACCEPT_VISITOR
 
 private:
     Vector<CallExpression::Argument> const m_arguments;
@@ -1545,6 +1745,12 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    AssignmentOp op() const { return m_op; }
+    Variant<NonnullRefPtr<Expression>, NonnullRefPtr<BindingPattern>> lhs() const { return m_lhs; }
+    NonnullRefPtr<Expression> rhs() const { return m_rhs; }
+
+    ACCEPT_VISITOR
+
 private:
     AssignmentOp m_op;
     Variant<NonnullRefPtr<Expression>, NonnullRefPtr<BindingPattern>> m_lhs;
@@ -1569,6 +1775,12 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    UpdateOp op() const { return m_op; }
+    NonnullRefPtr<Expression> argument() const { return m_argument; }
+    bool is_prefixed() const { return m_prefixed; }
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_update_expression() const override { return true; }
@@ -1612,6 +1824,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     Variant<NonnullRefPtr<Identifier>, NonnullRefPtr<BindingPattern>> m_target;
     RefPtr<Expression> m_init;
@@ -1639,6 +1853,8 @@ public:
     virtual bool is_constant_declaration() const override { return m_declaration_kind == DeclarationKind::Const; };
 
     virtual bool is_lexical_declaration() const override { return m_declaration_kind != DeclarationKind::Var; }
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_variable_declaration() const override { return true; }
@@ -1678,6 +1894,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_key;
     RefPtr<Expression> m_value;
@@ -1698,7 +1916,11 @@ public:
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    NonnullRefPtrVector<ObjectProperty> properties() const { return m_properties; }
+
     Optional<SourceRange> const& invalid_property_range() const { return m_first_invalid_property_range; }
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_object_expression() const override { return true; }
@@ -1720,6 +1942,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_array_expression() const override { return true; }
@@ -1749,6 +1973,8 @@ public:
     NonnullRefPtrVector<Expression> const& expressions() const { return m_expressions; }
     NonnullRefPtrVector<Expression> const& raw_strings() const { return m_raw_strings; }
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtrVector<Expression> const m_expressions;
     NonnullRefPtrVector<Expression> const m_raw_strings;
@@ -1766,6 +1992,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> const m_tag;
@@ -1794,6 +2022,8 @@ public:
     String to_string_approximation() const;
 
     bool ends_in_private_name() const;
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_member_expression() const override { return true; }
@@ -1836,6 +2066,8 @@ public:
     {
     }
 
+    ACCEPT_VISITOR
+
     virtual Completion execute(Interpreter& interpreter, GlobalObject& global_object) const override;
     virtual ThrowCompletionOr<JS::Reference> to_reference(Interpreter& interpreter, GlobalObject& global_object) const override;
     virtual void dump(int indent) const override;
@@ -1867,6 +2099,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual void dump(int indent) const override;
 
+    ACCEPT_VISITOR
+
 private:
     Type m_type;
 };
@@ -1882,6 +2116,8 @@ public:
 
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     virtual bool is_import_call() const override { return true; }
@@ -1903,6 +2139,12 @@ public:
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    NonnullRefPtr<Expression> test() const { return m_test; };
+    NonnullRefPtr<Expression> consequent() const { return m_consequent; };
+    NonnullRefPtr<Expression> alternate() const { return m_alternate; };
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> m_test;
@@ -1932,6 +2174,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     Variant<FlyString, NonnullRefPtr<BindingPattern>> m_parameter;
     NonnullRefPtr<BlockStatement> m_body;
@@ -1955,6 +2199,8 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<BlockStatement> m_block;
     RefPtr<CatchClause> m_handler;
@@ -1974,6 +2220,8 @@ public:
     virtual void dump(int indent) const override;
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 
 private:
     NonnullRefPtr<Expression> m_argument;
@@ -2011,6 +2259,11 @@ public:
     Completion execute_impl(Interpreter&, GlobalObject&) const;
     void add_case(NonnullRefPtr<SwitchCase> switch_case) { m_cases.append(move(switch_case)); }
 
+    NonnullRefPtr<Expression> discriminant() const { return m_discriminant; }
+    NonnullRefPtrVector<SwitchCase> cases() const { return m_cases; }
+
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_discriminant;
     NonnullRefPtrVector<SwitchCase> m_cases;
@@ -2029,6 +2282,8 @@ public:
     FlyString const& target_label() const { return m_target_label; }
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
 
+    ACCEPT_VISITOR
+
 private:
     FlyString m_target_label;
 };
@@ -2046,6 +2301,8 @@ public:
 
     FlyString const& target_label() const { return m_target_label; }
 
+    ACCEPT_VISITOR
+
 private:
     FlyString m_target_label;
 };
@@ -2059,6 +2316,8 @@ public:
 
     virtual Completion execute(Interpreter&, GlobalObject&) const override;
     virtual Bytecode::CodeGenerationErrorOr<void> generate_bytecode(Bytecode::Generator&) const override;
+
+    ACCEPT_VISITOR
 };
 
 class SyntheticReferenceExpression final : public Expression {
@@ -2073,6 +2332,7 @@ public:
     virtual Completion execute(Interpreter&, GlobalObject&) const override { return m_value; }
     virtual ThrowCompletionOr<Reference> to_reference(Interpreter&, GlobalObject&) const override { return m_reference; }
 
+    ACCEPT_VISITOR
 private:
     Reference m_reference;
     Value m_value;

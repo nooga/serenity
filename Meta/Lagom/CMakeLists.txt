@@ -500,6 +500,10 @@ if (BUILD_LAGOM)
         set_target_properties(js_lagom PROPERTIES OUTPUT_NAME js)
         target_link_libraries(js_lagom LagomJS LagomLine LagomMain Threads::Threads)
 
+        add_executable(jspp_lagom ../../Userland/Utilities/jspp.cpp)
+        set_target_properties(jspp_lagom PROPERTIES OUTPUT_NAME jspp)
+        target_link_libraries(jspp_lagom LagomJS LagomCore LagomMain)
+
         add_executable(markdown-check_lagom ../../Userland/Utilities/markdown-check.cpp)
         set_target_properties(markdown-check_lagom PROPERTIES OUTPUT_NAME markdown-check)
         target_link_libraries(markdown-check_lagom LagomMarkdown)

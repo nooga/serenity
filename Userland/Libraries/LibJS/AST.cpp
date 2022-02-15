@@ -1616,6 +1616,8 @@ public:
         VERIFY_NOT_REACHED();
     }
 
+    ACCEPT_VISITOR
+
 private:
     NonnullRefPtr<Expression> m_expression;
     FlyString m_class_field_identifier_name; // [[ClassFieldIdentifierName]]

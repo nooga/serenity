@@ -234,6 +234,7 @@ set(SOURCES
     SyntaxHighlighter.cpp
     SyntheticModule.cpp
     Token.cpp
+    Printer.cpp
 )
 
 serenity_lib(LibJS js)
