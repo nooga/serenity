@@ -1,0 +1,3 @@
+FROM scratch
+COPY ./main.js /app
+ENTRYPOINT ["js", "/app/main.js"]

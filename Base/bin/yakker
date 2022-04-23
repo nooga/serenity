@@ -1,0 +1,87 @@
+#!/bin/Shell
+
+match $1 {
+    build {
+        sleep 0.2
+        echo "STEP 1/3: FROM serenity"
+        sleep 0.1
+        echo "STEP 2/3: COPY ./main.js /app"
+        echo -- '--> 06ea32c2552'
+        sleep 0.1
+        echo 'STEP 3/3: ENTRYPOINT ["js", "/app/main.js"]'
+        sleep 0.2
+        echo "COMMIT whcf"
+        echo -- '--> 549b61c36e7'
+        echo "Successfully tagged whcf:latest"
+        echo "549b61c36e7c7d7d10a1188a5db35c994e823c669432e97ff8633003af2216f7"
+    }
+    run {
+        js main.js
+    }
+    images {
+        echo "REPOSITORY                TAG         IMAGE ID      CREATED      SIZE"
+        echo "local/whcf                latest      549b61c36e7c  just now     3.85 kB"
+    }
+    * {
+        echo 'Manage pods, containers and images'
+        echo ''
+        echo 'Usage:'
+        echo 'yakker [options] [command]'
+        echo ''
+        echo 'Available Commands:'
+        echo 'attach      Attach to a running container'
+        echo 'build       Build an image using instructions from Containerfiles'
+        echo 'commit      Create new image based on the changed container'
+        echo 'container   Manage containers'
+        echo 'cp          Copy files/folders between a container and the local filesystem'
+        echo 'create      Create but do not start a container'
+        echo "diff        Display the changes to the object's file system'"
+        echo 'events      Show yakker events'
+        echo 'exec        Run a process in a running container'
+        echo "export      Export container's filesystem contents as a tar archive"
+        echo 'generate    Generate structured data based on containers, pods or volumes'
+        echo 'healthcheck Manage health checks on containers'
+        echo 'help        Help about any command'
+        echo 'history     Show history of a specified image'
+        echo 'image       Manage images'
+        echo 'images      List images in local storage'
+        echo 'import      Import a tarball to create a filesystem image'
+        echo 'info        Display yakker system information'
+        echo 'init        Initialize one or more containers'
+        echo 'inspect     Display the configuration of object denoted by ID'
+        echo 'kill        Kill one or more running containers with a specific signal'
+        echo 'load        Load image(s) from a tar archive'
+        echo 'login       Login to a container registry'
+        echo 'logout      Logout of a container registry'
+        echo 'logs        Fetch the logs of one or more containers'
+        echo 'machine     Manage a virtual machine'
+        echo 'manifest    Manipulate manifest lists and image indexes'
+        echo 'network     Manage networks'
+        echo 'pause       Pause all the processes in one or more containers'
+        echo 'play        Play containers, pods or volumes from a structured file'
+        echo 'pod         Manage pods'
+        echo 'port        List port mappings or a specific mapping for the container'
+        echo 'ps          List containers'
+        echo 'pull        Pull an image from a registry'
+        echo 'push        Push an image to a specified destination'
+        echo 'rename      Rename an existing container'
+        echo 'restart     Restart one or more containers'
+        echo 'rm          Remove one or more containers'
+        echo 'rmi         Removes one or more images from local storage'
+        echo 'run         Run a command in a new container'
+        echo 'save        Save image(s) to an archive'
+        echo 'search      Search registry for image'
+        echo 'secret      Manage secrets'
+        echo 'start       Start one or more containers'
+        echo 'stats       Display a live stream of container resource usage statistics'
+        echo 'stop        Stop one or more containers'
+        echo 'system      Manage yakker'
+        echo 'tag         Add an additional name to a local image'
+        echo 'top         Display the running processes of a container'
+        echo 'unpause     Unpause the processes in one or more containers'
+        echo 'untag       Remove a name from a local image'
+        echo 'version     Display the Yakker version information'
+        echo 'volume      Manage volumes'
+        echo 'wait        Block on one or more containers'
+    }
+}
